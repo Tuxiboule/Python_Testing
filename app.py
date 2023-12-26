@@ -71,3 +71,7 @@ def purchasePlaces():
 @app.route('/logout')
 def logout():
     return redirect(url_for('index'))
+
+@app.route('/points')
+def points():
+    return render_template('points.html', clubs=clubs)
