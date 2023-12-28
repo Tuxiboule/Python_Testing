@@ -2,32 +2,63 @@ import json
 from flask import Flask, render_template, request, redirect, flash, url_for
 
 
+# Function to load clubs from a JSON file
 def loadClubs():
+    """
+    Load clubs from a JSON file.
+
+    Returns:
+        list: List of club dictionaries.
+    """
     with open('clubs.json') as c:
         listOfClubs = json.load(c)['clubs']
         return listOfClubs
 
 
+# Function to load competitions from a JSON file
 def loadCompetitions():
+    """
+    Load competitions from a JSON file.
+
+    Returns:
+        list: List of competition dictionaries.
+    """
     with open('competitions.json') as comps:
         listOfCompetitions = json.load(comps)['competitions']
         return listOfCompetitions
 
 
+# Flask app setup
 app = Flask(__name__)
 app.secret_key = 'something_special'
 
+# Load competitions and clubs
 competitions = loadCompetitions()
 clubs = loadClubs()
 
 
+# Route for the home page
 @app.route('/')
 def index():
+    """
+    Render the home page.
+
+    Returns:
+        str: Rendered HTML for the home page.
+    """
     return render_template('index.html')
 
 
+# Route to handle form submission and show club summary
 @app.route('/showSummary', methods=['POST'])
 def showSummary():
+    """
+    Process form submission, find the club based on email,
+    and render the welcome page with club details.
+
+    Returns:
+        str: Rendered HTML for the welcome page or index page in case of failure.
+    """
     email = request.form['email']
     matching_clubs = [club for club in clubs if club['email'] == email]
 
@@ -39,8 +70,19 @@ def showSummary():
         return render_template('index.html')
 
 
+# Route to handle booking page
 @app.route('/book/<competition>/<club>')
 def book(competition, club):
+    """
+    Render the booking page with details of the selected competition and club.
+
+    Args:
+        competition (str): Name of the competition.
+        club (str): Name of the club.
+
+    Returns:
+        str: Rendered HTML for the booking page or welcome page in case of failure.
+    """
     foundClub = [c for c in clubs if c['name'] == club][0]
     foundCompetition = [c for c in competitions if c['name'] == competition][0]
     if foundClub and foundCompetition:
@@ -50,30 +92,62 @@ def book(competition, club):
         return render_template('welcome.html', club=club, competitions=competitions)
 
 
+# Route to handle the purchase of places
 @app.route('/purchasePlaces', methods=['POST'])
 def purchasePlaces():
-    competition = [c for c in competitions if c['name'] == request.form['competition']][0]
-    club = [c for c in clubs if c['name'] == request.form['club']][0]
-    placesRequired = int(request.form['places'])
-    if (int(competition['numberOfPlaces']) >= placesRequired and
-            int(club['points']) >= placesRequired and
-            placesRequired <= 12):
+    """
+    Process the form submission for purchasing places and update competition and club data.
 
-        competition['numberOfPlaces'] = int(competition['numberOfPlaces']) - placesRequired
-        club['points'] = int(club['points']) - placesRequired
-        flash(f'Great-booking complete ! {placesRequired} places for {competition["name"]} competition')
+    Returns:
+        str: Rendered HTML for the welcome page with updated information.
+    """
+    competition_name = request.form['competition']
+    
+    matching_competitions = [c for c in competitions if c['name'] == competition_name]
 
+    if not matching_competitions:
+        flash(f"Competition '{competition_name}' not found.")
+        return render_template('index.html')
+
+    competition = matching_competitions[0]
+
+    club_name = request.form['club']
+    club = [c for c in clubs if c['name'] == club_name][0]
+    places_required = int(request.form['places'])
+
+    if (
+        int(competition['numberOfPlaces']) >= places_required
+        and int(club['points']) >= places_required
+        and places_required <= 12
+    ):
+        competition['numberOfPlaces'] = int(competition['numberOfPlaces']) - places_required
+        club['points'] = int(club['points']) - places_required
+        flash(f'Great-booking complete! {places_required} places for {competition["name"]} competition')
     else:
         flash("There is not enough places or you don't have enough points")
 
     return render_template('welcome.html', club=club, competitions=competitions)
 
 
+# Route to handle logout
 @app.route('/logout')
 def logout():
+    """
+    Redirect to the home page upon logout.
+
+    Returns:
+        str: Redirect to the home page.
+    """
     return redirect(url_for('index'))
 
 
+# Route to display points
 @app.route('/points')
 def points():
+    """
+    Render the points page with information about all the clubs.
+
+    Returns:
+        str: Rendered HTML for the points page.
+    """
     return render_template('points.html', clubs=clubs)
