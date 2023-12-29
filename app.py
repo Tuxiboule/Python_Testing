@@ -1,5 +1,6 @@
 import json
 from flask import Flask, render_template, request, redirect, flash, url_for
+from datetime import datetime
 
 
 # Function to load clubs from a JSON file
@@ -63,6 +64,13 @@ def showSummary():
     matching_clubs = [club for club in clubs if club['email'] == email]
 
     if matching_clubs:
+        for competition in competitions:
+            competition_date = datetime.strptime(competition['date'], '%Y-%m-%d %H:%M:%S')
+            now = datetime.now()
+            if competition_date > now:
+                competition['passed'] = False
+            else:
+                competition['passed'] = True
         club = matching_clubs[0]
         return render_template('welcome.html', club=club, competitions=competitions)
     else:
@@ -101,8 +109,9 @@ def purchasePlaces():
     Returns:
         str: Rendered HTML for the welcome page with updated information.
     """
+    global competitions, clubs
     competition_name = request.form['competition']
-    
+
     matching_competitions = [c for c in competitions if c['name'] == competition_name]
 
     if not matching_competitions:
