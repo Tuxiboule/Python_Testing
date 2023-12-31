@@ -15,7 +15,6 @@ def test_integration_scenario(client, clubs):
         'places': 1
     })
     assert response.status_code == 200
-    #assert b'Great-booking complete!' in response.data
 
     # Step 3: logout
     response = client.get('/logout', follow_redirects=True)

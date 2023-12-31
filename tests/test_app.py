@@ -94,8 +94,11 @@ def test_points(client, clubs):
         None
     """
     response = client.get('/points')
+    print(response.get_data(as_text= True))
     for club in clubs:
         assert club['name'].encode("utf-8") in response.data
+        print(club['points'])
+        assert club['points'].encode("utf-8") in response.data
     assert response.status_code == 200
 
 
